@@ -35,11 +35,14 @@ float convertOxygenToPPM(float oxygenPercentage) {
     return oxygenPercentage * 10000;
 }
 
+// Definitions
 #define LOG_INTERVAL  3000 // mills between entries (reduce to take more/faster data)
 #define SYNC_INTERVAL 3000 // mills between calls to flush() - to write data to the card
 uint32_t syncTime = 0; // time of last sync()
 #define ECHO_TO_SERIAL   1 // echo data to serial port
-RTC_DS1307 RTC; // define the Real Time Clock object
+
+
+RTC_DS1307 RTC;
 const int chipSelect = 10;
 File logfile;
 
@@ -67,13 +70,10 @@ void setup() {
   Serial.println("SETUP COMPLETE");
   Serial.println("");
 
-  lcd.init(); // initialize the lcd
+  lcd.init();
   lcd.backlight();
 
-  // initialize the SD card
   Serial.print("Initializing SD card...");
-  // make sure that the default chip select pin is set to
-  // output, even if you don't use it:
   pinMode(10, OUTPUT);
 
   // see if the card is present and can be initialized:
