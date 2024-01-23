@@ -6,11 +6,12 @@
 #include <SD.h>
 #include "RTClib.h"
 
+//define i2c addresses of sensors
 Ezo_board HUM = Ezo_board(111, "HUM");
 Ezo_board o2 = Ezo_board(112, "o2");
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-Adafruit_BMP085 bmp;
 
+//define variables
 char Humidity_data[32];
 char *HUMID;
 char *TMP;
@@ -81,18 +82,14 @@ void setup() {
   }
   Serial.println("card initialized.");
 
-  // create a new file
-  char filename[] = "LOGGER00.CSV";
-  for (uint8_t i = 0; i < 100; i++) {
-    filename[6] = i/10 + '0';
-    filename[7] = i%10 + '0';
-    if (! SD.exists(filename)) {
-      // only open a new file if it doesn't exist
-      logfile = SD.open(filename, FILE_WRITE);
-      break;  // leave the loop!
-    }
-  }
+  char filename[20];
+  sprintf(filename, "%04d%02d%02d_%02d%02d%02d_logfile.csv", now.year(),
+    now.month(), now.day(), now.hour(), now.minute(), now.second());
 
+  if (SD.exists(filename)) {
+    error("File already exists");
+  } else {
+    logfile = SD.open(filename, FILE_WRITE);
 
   if (! logfile) {
     error("couldnt create file");
