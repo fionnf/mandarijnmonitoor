@@ -39,7 +39,6 @@ float convertOxygenToPPM(float oxygenPercentage) {
 #define LOG_INTERVAL  3000 // mills between entries (reduce to take more/faster data)
 #define SYNC_INTERVAL 3000 // mills between calls to flush() - to write data to the card
 uint32_t syncTime = 0; // time of last sync()
-#define ECHO_TO_SERIAL   1 // echo data to serial port
 
 
 RTC_DS1307 RTC;
@@ -57,7 +56,7 @@ void error(char *str)
   while(1);
 }
 
-void setup() {
+void setup(){
   Wire.begin();                           //start the I2C
   Serial.begin(9600);                     //start the serial communication to the computer
   Seq.reset();                            //initialize the sequencer
@@ -82,6 +81,8 @@ void setup() {
   }
   Serial.println("card initialized.");
 
+  DateTime now = RTC.now();
+
   char filename[20];
   sprintf(filename, "%04d%02d%02d_%02d%02d%02d_logfile.csv", now.year(),
     now.month(), now.day(), now.hour(), now.minute(), now.second());
@@ -90,6 +91,7 @@ void setup() {
     error("File already exists");
   } else {
     logfile = SD.open(filename, FILE_WRITE);
+  }
 
   if (! logfile) {
     error("couldnt create file");
@@ -101,20 +103,14 @@ void setup() {
   Wire.begin();
   if (!RTC.begin()) {
     logfile.println("RTC failed");
-  #if ECHO_TO_SERIAL
     Serial.println("RTC failed");
-  #endif  //ECHO_TO_SERIAL
   }
 
   logfile.println("millis,stamp,datetime,temp, HUM, O2, h20(ppm),o2(ppm)");
-  #if ECHO_TO_SERIAL
     Serial.println("millis,stamp,datetime,temp,HUM, O2, hum(ppm),o2(ppm)");
-  #endif
-
 }
 
-void loop()
-{
+void loop(){
   DateTime now;
   Seq.run();                              //run the sequncer to do the polling
   delay(2000);
@@ -134,10 +130,9 @@ void loop()
   uint32_t m = millis();
   logfile.print(m);           // milliseconds since start
   logfile.print(",");
-#if ECHO_TO_SERIAL
   Serial.print(m);         // milliseconds since start
   Serial.print(",");
-#endif
+
   // fetch the time
   now = RTC.now();
   // log time
@@ -156,7 +151,7 @@ void loop()
   logfile.print(":");
   logfile.print(now.second(), DEC);
   //logfile.print('"');
-#if ECHO_TO_SERIAL
+
   Serial.print(now.unixtime()); // seconds since 1/1/1970
   Serial.print(",");
   //Serial.print('"');
@@ -172,47 +167,43 @@ void loop()
   Serial.print(":");
   Serial.print(now.second(), DEC);
   //Serial.print('"');
-#endif //ECHO_TO_SERIAL
+
 
 logfile.print(",");
   logfile.print(TMP);
-#if ECHO_TO_SERIAL
+
   Serial.print(", ");
   Serial.print(TMP);
-#endif //ECHO_TO_SERIAL
+
 
 logfile.print(",");
   logfile.print(HUMID);
-#if ECHO_TO_SERIAL
+
   Serial.print(",");
   Serial.print(HUMID);
-#endif //ECHO_TO_SERIAL
+
 
 logfile.print(",");
   logfile.print(o2_data);
-#if ECHO_TO_SERIAL
+
   Serial.print(",");
   Serial.print(o2_data);
-#endif //ECHO_TO_SERIAL
+
 
 logfile.print(",");
   logfile.print(HUMppm);
-#if ECHO_TO_SERIAL
+
   Serial.print(",");
   Serial.print(HUMppm);
-#endif //ECHO_TO_SERIAL
+
 
 logfile.print(",");
   logfile.print(O2ppm);
-#if ECHO_TO_SERIAL
   Serial.print(",");
   Serial.print(O2ppm);
-#endif //ECHO_TO_SERIAL
-
   logfile.println();
-#if ECHO_TO_SERIAL
   Serial.println();
-#endif // ECHO_TO_SERIAL
+
 
  logfile.flush();
 }
@@ -238,5 +229,10 @@ void step2(){
 
   HUMppm = convertHumidityToPPM(HUMID_float, TMP_float);
   O2ppm = convertOxygenToPPM(o2_float);
+}
 
+void error(const char *str) {
+  Serial.print("error: ");
+  Serial.println(str);
+    while(1);
 }
