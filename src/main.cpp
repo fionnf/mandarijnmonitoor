@@ -1,26 +1,38 @@
 #include <Arduino.h>
-#include <Wire.h>
-#include <sequencer2.h> //imports a 2 function sequencer
-#include <Ezo_i2c_util.h> //brings in common print statements
+#include <Ezo_i2c.h> //include the EZO I2C library from https://github.com/Atlas-Scientific/Ezo_I2c_lib
+#include <Wire.h>    //include arduinos i2c library
+#include <sequencer2.h> //imports a 2 function sequencer from Atlas library
 #include <LiquidCrystal_I2C.h>
-#include <SPI.h>
 #include <SD.h>
 #include "RTClib.h"
 
 Ezo_board HUM = Ezo_board(111, "HUM");
 Ezo_board o2 = Ezo_board(112, "o2");
 LiquidCrystal_I2C lcd(0x27, 16, 2);
+Adafruit_BMP085 bmp;
 
 char Humidity_data[32];
 char *HUMID;
 char *TMP;
 char *NUL;
-char o2_data[20]; //since the o2 sensor only gives a single value response, we do not need to parse.
+char o2_data[20];
 
 float HUMID_float;
 float TMP_float;
+float o2_float;
+float HUMppm;
+float O2ppm;
 
+float convertHumidityToPPM(float humidity, float temperature) {
+    float E = 6.1094 * exp((17.625 * temperature) / (temperature + 243.04));
+    float VP = (humidity / 100.0) * E;
+    float atmosphericPressure = 1013.25; // Standard atmospheric pressure at sea level
+    return (VP / atmosphericPressure) * 1000000;
+}
 
+float convertOxygenToPPM(float oxygenPercentage) {
+    return oxygenPercentage * 10000;
+}
 
 #define LOG_INTERVAL  3000 // mills between entries (reduce to take more/faster data)
 #define SYNC_INTERVAL 3000 // mills between calls to flush() - to write data to the card
@@ -30,11 +42,8 @@ RTC_DS1307 RTC; // define the Real Time Clock object
 const int chipSelect = 10;
 File logfile;
 
-
-
-void step1();  //forward declarations of functions to use them in the sequencer before defining them
+void step1();
 void step2();
-
 Sequencer2 Seq(&step1, 1000, &step2, 0);  //calls the steps in sequence with time in between them
 
 void error(char *str)
@@ -100,10 +109,11 @@ void setup() {
   #endif  //ECHO_TO_SERIAL
   }
 
-  logfile.println("millis,stamp,datetime,temp,hum,o2");
+  logfile.println("millis,stamp,datetime,temp, HUM, O2, h20(ppm),o2(ppm)");
   #if ECHO_TO_SERIAL
-    Serial.println("millis,stamp,datetime,temp,hum,o2");
+    Serial.println("millis,stamp,datetime,temp,HUM, O2, hum(ppm),o2(ppm)");
   #endif
+
 }
 
 void loop()
@@ -112,15 +122,16 @@ void loop()
   Seq.run();                              //run the sequncer to do the polling
   delay(2000);
 
+
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("HUM: ");
   lcd.print(HUMID);
-  lcd.print("%");
+  lcd.print(" %");
   lcd.setCursor(0,1);
   lcd.print("O2: ");
   lcd.print(o2_data);
-  lcd.print("%");
+  lcd.print(" %");
 
   // log milliseconds since starting
   uint32_t m = millis();
@@ -187,6 +198,20 @@ logfile.print(",");
   Serial.print(o2_data);
 #endif //ECHO_TO_SERIAL
 
+logfile.print(",");
+  logfile.print(HUMppm);
+#if ECHO_TO_SERIAL
+  Serial.print(",");
+  Serial.print(HUMppm);
+#endif //ECHO_TO_SERIAL
+
+logfile.print(",");
+  logfile.print(O2ppm);
+#if ECHO_TO_SERIAL
+  Serial.print(",");
+  Serial.print(O2ppm);
+#endif //ECHO_TO_SERIAL
+
   logfile.println();
 #if ECHO_TO_SERIAL
   Serial.println();
@@ -194,7 +219,6 @@ logfile.print(",");
 
  logfile.flush();
 }
-
 
 void step1(){
   //tell the sensors to do a reading
@@ -209,4 +233,13 @@ void step2(){
     TMP = strtok(NULL, ",");                  //let's pars the string at each comma. variable TMP
     NUL = strtok(NULL, ",");                  //let's pars the string at each comma (the sensor outputs the word "DEW" in the string, we dont need it.
   o2.receive_cmd(o2_data,20);    //o2 data stores in variable o2_data
+
+ // Convert TMP and HUMID to float
+  TMP_float = atof(TMP);
+  HUMID_float = atof(HUMID);
+  o2_float = atof(o2_data);
+
+  HUMppm = convertHumidityToPPM(HUMID_float, TMP_float);
+  O2ppm = convertOxygenToPPM(o2_float);
+
 }
