@@ -61,10 +61,25 @@
         while(1);
     }
 
+
 void setup(){
         Wire.begin();
         Serial.begin(9600);
         Seq.reset();
+
+    //LCD card setup
+        lcd.init();
+        lcd.clear();
+        lcd.backlight();
+
+        // Clear the display
+        lcd.clear();
+
+        // Display "Mandarijn Monitoor"
+        lcd.setCursor(0, 0);
+        lcd.print("Mandarijn");
+        lcd.setCursor(0, 1);
+        lcd.print("Monitoor");
 
         delay(3000);
         HUM.send_cmd("o,t,1");        //send command to enable temperature output
@@ -74,12 +89,10 @@ void setup(){
 
         Serial.println("SETUP COMPLETE");
         Serial.println("");
-    //LCD card setup
-        lcd.init();
-        lcd.backlight();
+
 
     //SD card logging setup
-        Serial.print("Initializing SD card...");
+        Serial.print("Initializing SD card now...");
         pinMode(10, OUTPUT);
         if (!SD.begin(chipSelect)) {
             error("Card failed, or not present");
@@ -111,7 +124,7 @@ void setup(){
     //Logfile Header
         logfile.println("millis,stamp,datetime,temp, HUM, O2, h20(ppm),o2(ppm)");
         Serial.println("millis,stamp,datetime,temp,HUM, O2, hum(ppm),o2(ppm)");
-
+        delay(2000);
     }
 
 
@@ -217,3 +230,5 @@ void step2(){
         O2ppm = convertOxygenToPPM(o2_float);
 
     }
+
+
