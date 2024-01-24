@@ -217,9 +217,9 @@ void step1(){
 
 void step2(){
         HUM.receive_cmd(Humidity_data, 32);
-        HUMID = strtok(Humidity_data, ",");
-        TMP = strtok(NULL, ",");
-        NUL = strtok(NULL, ",");
+            HUMID = strtok(Humidity_data, ",");
+            TMP = strtok(NULL, ",");
+            NUL = strtok(NULL, ",");
         o2.receive_cmd(o2_data,20);
 
         TMP_float = atof(TMP);
