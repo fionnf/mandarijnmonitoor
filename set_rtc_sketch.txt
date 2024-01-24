@@ -1,0 +1,46 @@
+//Upload this sketch via the ARDUINO IDE to set the time, it uses the computer clock!
+
+#include <Wire.h>
+#include <RTClib.h>
+
+RTC_DS1307 rtc; // Change to RTC_DS3231 if you're using a DS3231
+
+void setup() {
+  Serial.begin(9600);
+  while (!Serial) {
+    ; // Wait for serial port to connect
+  }
+
+  if (!rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    while (1);
+  }
+
+  if (!rtc.isrunning()) {
+    Serial.println("RTC is NOT running, let's set the time!");
+    // The following line sets the RTC to the date & time this sketch was compiled
+    rtc.adjust(DateTime(__DATE__, __TIME__));
+    // This line sets the RTC with an explicit date & time, for example to set
+    // January 21, 2024 at 3am you would call:
+    // rtc.adjust(DateTime(2024, 1, 21, 3, 0, 0));
+  }
+}
+
+void loop() {
+  DateTime now = rtc.now();
+
+  Serial.print(now.year(), DEC);
+  Serial.print('/');
+  Serial.print(now.month(), DEC);
+  Serial.print('/');
+  Serial.print(now.day(), DEC);
+  Serial.print(" ");
+  Serial.print(now.hour(), DEC);
+  Serial.print(':');
+  Serial.print(now.minute(), DEC);
+  Serial.print(':');
+  Serial.print(now.second(), DEC);
+  Serial.println();
+
+  delay(1000);
+}
