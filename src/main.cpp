@@ -37,7 +37,7 @@
     }
 
     float convertOxygenToPPM(float oxygenPercentage) {
-        return oxygenPercentage * 10000;
+        return oxygenPercentage * 1000;
     }
 
 // Definitions
@@ -79,12 +79,16 @@ void setup(){
         lcd.setCursor(0, 0);
         lcd.print("Mandarijn");
         lcd.setCursor(0, 1);
-        lcd.print("Monitoor");
+        lcd.print("Monitor");
 
         delay(3000);
         HUM.send_cmd("o,t,1");        //send command to enable temperature output
         delay(300);
         HUM.send_cmd("o,dew,1");      //send command to disable dew point output
+        delay(300);
+        o2.send_cmd("O,ppt,1");
+        delay(300);
+        o2.send_cmd("O,%,0");
         delay(300);
 
         Serial.println("SETUP COMPLETE");
@@ -122,8 +126,8 @@ void setup(){
         }
 
     //Logfile Header
-        logfile.println("millis,stamp,datetime,temp, HUM, O2, h20(ppm),o2(ppm)");
-        Serial.println("millis,stamp,datetime,temp,HUM, O2, hum(ppm),o2(ppm)");
+        logfile.println("millis,stamp,datetime,temp, HUM, O2(ppt), h20(ppm),o2(ppm)");
+        Serial.println("millis,stamp,datetime,temp,HUM, O2(ppt), hum(ppm),o2(ppm)");
         delay(2000);
     }
 
@@ -141,7 +145,7 @@ void loop() {
         lcd.setCursor(0,1);
         lcd.print("O2: ");
         lcd.print(o2_data);
-        lcd.print(" %");
+        lcd.print(" ppt");
 
         uint32_t m = millis();
         logfile.print(m);
