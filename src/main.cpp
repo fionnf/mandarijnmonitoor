@@ -18,13 +18,15 @@
     char *HUMID;
     char *TMP;
     char *NUL;
+    char *DEW;
     char o2_data[20]; //since the o2 sensor only gives a single value response, we do not need to parse.
 
     float HUMID_float;
     float TMP_float;
+    float DEW_float;
     float o2_float;
     float PRES;
-    float TMP2; //temperature from BMP pressure and temperature sensor
+    float TMP2;
     float HUMppm;
     float O2ppm;
 
@@ -82,9 +84,11 @@ void setup(){
         lcd.print("Monitor");
 
         delay(3000);
-        HUM.send_cmd("o,t,1");        //send command to enable temperature output
+        HUM.send_cmd("o,hum,1");
+        delay(3000);
+        HUM.send_cmd("o,t,1");
         delay(300);
-        HUM.send_cmd("o,dew,1");      //send command to disable dew point output
+        HUM.send_cmd("o,dew,1");
         delay(300);
         o2.send_cmd("O,ppt,1");
         delay(300);
@@ -224,6 +228,7 @@ void step2(){
             HUMID = strtok(Humidity_data, ",");
             TMP = strtok(NULL, ",");
             NUL = strtok(NULL, ",");
+            DEW = strtok(NULL, ",");
         o2.receive_cmd(o2_data,20);
 
         TMP_float = atof(TMP);
