@@ -7,6 +7,7 @@
 #include <SPI.h>
 #include <SD.h>
 #include "RTClib.h"
+#include "AccelStepper.h"
 
 // I2C addresses
     Ezo_board HUM = Ezo_board(111, "HUM");
@@ -50,6 +51,18 @@
     RTC_DS1307 RTC; // define the Real Time Clock object
     const int chipSelect = 10;
     File logfile;
+
+//stepper
+    #define dirPin 7
+    #define stepPin 6
+    #define motorInterfaceType 1
+
+    // Create a new instance of the AccelStepper class:
+    AccelStepper stepper = AccelStepper(motorInterfaceType, stepPin, dirPin);
+    // Calibration value: ml dispensed at a speed of 600 steps per minute.
+    const float calibrationValue = 2.123;
+    int direction = -1;
+    bool calibrationMode = false; // Set to true to enter calibration mode
 
     void step1();
     void step2();
@@ -133,7 +146,16 @@ void setup(){
         logfile.println("millis,stamp,datetime,temp, HUM, O2(ppt), h20(ppm),o2(ppm)");
         Serial.println("millis,stamp,datetime,temp,HUM, O2(ppt), hum(ppm),o2(ppm)");
         delay(2000);
+
+    stepper.setMaxSpeed(2000);
+    pinMode(4, OUTPUT);
+    pinMode(3, OUTPUT);
+    pinMode(5, OUTPUT);
+    digitalWrite(5,LOW);
+    digitalWrite(4,LOW);
+    digitalWrite(3,HIGH);
     }
+
 
 
 void loop() {
@@ -215,6 +237,14 @@ void loop() {
         Serial.println();
 
         logfile.flush();
+
+        float desiredFlowRate = 3.5; // Example flow rate
+        float speed = (desiredFlowRate / calibrationValue) * 600;
+        if (calibrationMode) { speed = 600; }
+        speed *= direction;
+        stepper.setSpeed(speed);
+        stepper.runSpeed();
+        delay(200);
 
 }
 
