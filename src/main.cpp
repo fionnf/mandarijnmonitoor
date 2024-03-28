@@ -53,16 +53,14 @@
     File logfile;
 
 //stepper
-    #define dirPin 7
-    #define stepPin 6
-    #define motorInterfaceType 1
+#define dirPin 7
+#define stepPin 6
+#define motorInterfaceType 1
 
-    // Create a new instance of the AccelStepper class:
-    AccelStepper stepper = AccelStepper(motorInterfaceType, stepPin, dirPin);
-    // Calibration value: ml dispensed at a speed of 600 steps per minute.
-    const float calibrationValue = 2.123;
-    int direction = -1;
-    bool calibrationMode = false; // Set to true to enter calibration mode
+AccelStepper stepper = AccelStepper(motorInterfaceType, stepPin, dirPin);
+const float calibrationValue = 2.123;
+int direction = -1;
+bool calibrationMode = false;
 
     void step1();
     void step2();
@@ -78,6 +76,15 @@
 
 
 void setup(){
+
+        stepper.setMaxSpeed(2000);
+        pinMode(4, OUTPUT);
+        pinMode(3, OUTPUT);
+        pinMode(5, OUTPUT);
+        digitalWrite(5, LOW);
+        digitalWrite(4, LOW);
+        digitalWrite(3, HIGH);
+
         Wire.begin();
         Serial.begin(9600);
         Seq.reset();
@@ -146,19 +153,18 @@ void setup(){
         logfile.println("millis,stamp,datetime,temp, HUM, O2(ppt), h20(ppm),o2(ppm)");
         Serial.println("millis,stamp,datetime,temp,HUM, O2(ppt), hum(ppm),o2(ppm)");
         delay(2000);
-
-    stepper.setMaxSpeed(2000);
-    pinMode(4, OUTPUT);
-    pinMode(3, OUTPUT);
-    pinMode(5, OUTPUT);
-    digitalWrite(5,LOW);
-    digitalWrite(4,LOW);
-    digitalWrite(3,HIGH);
     }
 
 
 
 void loop() {
+        float desiredFlowRate = 3.5;
+        float speed = (desiredFlowRate / calibrationValue) * 600;
+        if (calibrationMode) { speed = 600; }
+        speed *= direction;
+        stepper.setSpeed(speed);
+        stepper.runSpeed();
+
         DateTime now;
         Seq.run();
         delay(2000);
@@ -169,9 +175,9 @@ void loop() {
         lcd.print(HUMID);
         lcd.print(" %");
         lcd.setCursor(0,1);
-        lcd.print("O2: ");
-        lcd.print(o2_data);
-        lcd.print(" ppt");
+        lcd.print("TEMP: ");
+        lcd.print(TMP);
+        lcd.print(" C");
 
         uint32_t m = millis();
         logfile.print(m);
@@ -237,14 +243,6 @@ void loop() {
         Serial.println();
 
         logfile.flush();
-
-        float desiredFlowRate = 3.5; // Example flow rate
-        float speed = (desiredFlowRate / calibrationValue) * 600;
-        if (calibrationMode) { speed = 600; }
-        speed *= direction;
-        stepper.setSpeed(speed);
-        stepper.runSpeed();
-        delay(200);
 
 }
 
